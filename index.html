@@ -59,8 +59,15 @@
             <div class="col-xs-12" style="height:20px;"></div>
             <!-- Options -->
             <div class="btn-group">
+              <button type="button" class="btn btn-default" id="generateButton">Generate</button>
+            </div>
+            <div class="btn-group">
               <button type="button" class="btn btn-default" id="clearButton">Clear</button>
             </div>
+
+            <br/>
+            <div class="col-xs-12" style="height:10px;"></div>
+
             <div class="btn-group">
               <div class="dropdown" id="widthDropDiv">
                 <button class="btn btn-default dropdown-toggle" type="button" id="widthDrop" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
@@ -106,9 +113,21 @@
               </div>
             </div>
 
+            <!-- Options - Endian -->
             <div class="btn-group">
-              <button type="button" class="btn btn-default" id="generateButton">Generate</button>
+              <div class="dropdown" id="endianDropDiv">
+                <button class="btn btn-default dropdown-toggle" type="button" id="endianDrop" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                  Endian
+                  <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="heightDrop">
+                  <li><a href="#">Big Endian (MSB)</a></li>
+                  <li><a href="#">Little Endian (LSB)</a></li>
+                </ul>
+              </div>
             </div>
+
+
 
             <!-- Summary -->
             <div class="col-xs-12" style="height:20px;"></div>

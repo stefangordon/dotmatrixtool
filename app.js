@@ -1,7 +1,7 @@
 var matrix;
 var $table;
 var rowMajor = false;
-var msbendian = true;
+var msbendian = false;
 
 $(function() {
   	matrix = createArray(16,16);
@@ -47,6 +47,12 @@ function initOptions() {
      $('#byteDropDiv li a').click(function () {
 	 	var selection = $(this).html();
         rowMajor = selection.startsWith("Row");  
+        updateSummary();      	
+     });
+
+     $('#endianDropDiv li a').click(function () {
+	 	var selection = $(this).html();
+        msbendian = selection.startsWith("Big");  
         updateSummary();      	
      });
 
@@ -105,7 +111,12 @@ function generateByteArray() {
 		var newByte = 0;
 		for (var j = 0; j < 8; j++) {
             if (buffer[i+j]) {
-                newByte |= 1 << (7-j);  // MSB vs LSB
+            	if (msbendian) {
+                	newByte |= 1 << (7-j);
+                }
+                else {
+                	newByte |= 1 << j;
+                }
             }
         }
         bytes[i / 8] = newByte;
