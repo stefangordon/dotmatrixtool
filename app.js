@@ -16,7 +16,7 @@ function updateTable() {
 	var height = matrix.length;
 
 	$('#_grid').html('');
-	$('#_grid').append(populateTable(null, height, width, ""));
+	$('#_grid').append(populateTable(null, height, width, matrix));
 
 	// events
 	$table.on("mousedown", "td", toggle);
@@ -25,9 +25,10 @@ function updateTable() {
 }
 
 function initOptions() {
-	$('#clearButton').click(function() { matrix = createArray(matrix.length,matrix[0].length); updateTable(); $('#_output').hide(); });
+	$('#clearButton').click(function() { matrix = createArray(matrix.length,matrix[0].length); updateTable(); $('#_output').hide();});
 	$('#generateButton').click(updateCode);
-
+	$('#readButton').click(readData);
+	
 	 $('#widthDropDiv li a').click(function () {
 	 	var width = parseInt($(this).html());
 	 	var height = matrix.length;
@@ -81,6 +82,36 @@ function updateCode() {
 	$('#_output').removeClass('prettyprinted');
 	prettyPrint();
 }
+
+function readData() {
+	var bytestr = prompt("Input your data here, in hex format: 0x1, 0x2");
+	if (!bytestr) return;
+	var width = matrix.length;
+	var height = matrix[0].length;
+	var bytes = bytestr.split(',').map(function (x) { return parseInt(x)});
+	
+	var byteinarow=Math.ceil(width/8);
+	var byteinacol=Math.ceil(height/8);
+	var byteindex ;
+	var bitindex;
+	for (var y=0;y<height;y++) {
+		for(var x=0;x<width;x++) {
+			if (rowMajor) {
+			    byteindex = y*byteinarow + Math.floor(x/8);
+			    bitindex = x%8;
+			} else {
+				byteindex = x*byteinacol + Math.floor(y/8);
+				bitindex = y%8;
+			}
+			if (msbendian) bitindex = 7-bitindex;
+			matrix[y][x] = (bytes[byteindex] >> bitindex) & 0x1;
+		}
+	}
+	updateTable();
+	updateSummary();
+	updateCode();
+}
+
 
 function generateByteArray() {
 	var width = matrix[0].length;
@@ -157,8 +188,11 @@ function populateTable(table, rows, cells, content) {
             row.appendChild(document.createElement('td'));
             $(row.cells[j]).data('i', i);
             $(row.cells[j]).data('j', j);
+			if (content[i][j]) {
+				$(row.cells[j]).addClass('on');
+			}
         }
-        table.appendChild(row);        
+        table.appendChild(row);
     }
     $table = $(table);
     return table;
