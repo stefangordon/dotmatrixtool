@@ -1,12 +1,16 @@
 var matrix;
 var $table;
-var rowMajor = false;
+var rowMajor = true;
 var msbendian = false;
+var outputBinary = true;
 
 $(function() {
   	matrix = createArray(16,16);
   	updateTable();
 	initOptions();
+
+	$('#widthInput').val(16);
+	$('#heightInput').val(16);
 
 	$('#_output').hide();
 });
@@ -28,21 +32,33 @@ function initOptions() {
 	$('#clearButton').click(function() { matrix = createArray(matrix.length,matrix[0].length); updateTable(); $('#_output').hide(); });
 	$('#generateButton').click(updateCode);
 
-	 $('#widthDropDiv li a').click(function () {
-	 	var width = parseInt($(this).html());
-	 	var height = matrix.length;
-        matrix = createArray(height, width);
-        updateTable();
-        updateSummary();
-     });
+	//  $('#widthDropDiv li a').click(function () {
+	//  	var width = parseInt($(this).html());
+	//  	var height = matrix.length;
+    //     matrix = createArray(height, width);
+    //     updateTable();
+    //     updateSummary();
+    //  });
 
-     $('#heightDropDiv li a').click(function () {
-	 	var width = matrix[0].length;
-	 	var height = parseInt($(this).html());
-        matrix = createArray(height, width);
-        updateTable();
-        updateSummary();
-     });
+    //  $('#heightDropDiv li a').click(function () {
+	//  	var width = matrix[0].length;
+	//  	var height = parseInt($(this).html());
+    //     matrix = createArray(height, width);
+    //     updateTable();
+    //     updateSummary();
+    //  });
+
+	$('#widthInput').on("change", function () {
+		matrix = createArray(matrix.length, parseInt($(this).val()));
+		updateTable();
+		updateSummary();
+	});
+
+	$('#heightInput').on("change", function () {
+		matrix = createArray(parseInt($(this).val()), matrix[0].length);
+		updateTable();
+		updateSummary();
+	});
 
      $('#byteDropDiv li a').click(function () {
 	 	var selection = $(this).html();
@@ -86,7 +102,6 @@ function generateByteArray() {
 	var width = matrix[0].length;
 	var height = matrix.length;
 	var buffer = new Array(width * height);
-	var bytes = new Array((width * height) / 8);
 
 	// Column Major
 	var temp;
@@ -105,30 +120,37 @@ function generateByteArray() {
 		}
 	}
 
-	// Read buffer 8-bits at a time
-	// and turn it into bytes
-	for (var i = 0; i < buffer.length; i+=8) {
-		var newByte = 0;
-		for (var j = 0; j < 8; j++) {
-            if (buffer[i+j]) {
-            	if (msbendian) {
-                	newByte |= 1 << (7-j);
-                }
-                else {
-                	newByte |= 1 << j;
-                }
-            }
-        }
-        bytes[i / 8] = newByte;
-	}
+	var formatted = "";
+	if(outputBinary) {
+		formatted = buffer.join(', ');
+	} else {
+		var bytes = new Array((width * height) / 8);
 
-	var formatted = bytes.map(function (x) {
-	    x = x + 0xFFFFFFFF + 1;  // twos complement
-	    x = x.toString(16); // to hex
-	    x = ("0"+x).substr(-2); // zero-pad to 8-digits
-	    x = "0x" + x;
-	    return x;
-	}).join(', ');
+		// Read buffer 8-bits at a time
+		// and turn it into bytes
+		for (var i = 0; i < buffer.length; i+=8) {
+			var newByte = 0;
+			for (var j = 0; j < 8; j++) {
+				if (buffer[i+j]) {
+					if (msbendian) {
+						newByte |= 1 << (7-j);
+					}
+					else {
+						newByte |= 1 << j;
+					}
+				}
+			}
+			bytes[i / 8] = newByte;
+		}
+
+		formatted = bytes.map(function (x) {
+			x = x + 0xFFFFFFFF + 1;  // twos complement
+			x = x.toString(16); // to hex
+			x = ("0"+x).substr(-2); // zero-pad to 8-digits
+			x = "0x" + x;
+			return x;
+		}).join(', ');
+	}
 
 	return formatted;
 }
@@ -166,6 +188,10 @@ function populateTable(table, rows, cells, content) {
 
 // (height, width)
 function createArray(length) {
+	if(length <= 0) {
+		return matrix;
+	}
+
     var arr = new Array(length || 0),
         i = length;
 
