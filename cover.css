@@ -19,6 +19,10 @@ a:hover {
   border: 1px solid #fff;
 }
 
+/* Override color for input fields */
+.height-width-input {
+	color: black;
+}
 
 /*
  * Base structure
