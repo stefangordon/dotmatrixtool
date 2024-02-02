@@ -86,7 +86,8 @@ function updateCode() {
 function readData() {
 	var bytestr = prompt("Input your data here, in hex format: 0x1, 0x2");
 	if (!bytestr) return;
-	var width = matrix.length;
+	var width = matrix[0].length;
+	var height = matrix.length;
 	var height = matrix[0].length;
 	var bytes = bytestr.split(',').map(function (x) { return parseInt(x)});
 	
