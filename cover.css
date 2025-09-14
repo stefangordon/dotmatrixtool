@@ -190,6 +190,71 @@ body {
   text-align: left;
 }
 
+/* Output panel */
+.output-panel {
+  background-color: #1e1e1e; /* dark mode */
+  border: 1px solid #444;
+  border-radius: 6px;
+  text-align: left;
+  margin-top: 20px; /* add space above panel */
+  overflow: hidden; /* ensure inner corners follow outer radius */
+}
+.output-panel-header {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
+          justify-content: space-between;
+  padding: 5px 7px; /* consistent padding around buttons */
+  border-bottom: 1px solid #444;
+  background: #262626;
+}
+.output-panel pre {
+  margin: 0;
+  padding: 12px;
+  overflow-x: auto;
+  overflow-y: auto; /* allow scroll within fixed height */
+  background: #1a1a1a; /* very dark grey */
+  color: #d4d4d4;
+  height: 156px; /* reduced ~40% to prevent page reflow */
+}
+
+/* Override Prettify's inner border so only the outer panel border is visible */
+.output-panel pre.prettyprint {
+  border: none;
+  box-shadow: none;
+  padding: 3px 6px;
+}
+.output-panel-header .btn {
+  margin: 0 2px 0 0; /* consistent horizontal spacing */
+  padding: 3px 10px; /* slim buttons, better vertical centering */
+  line-height: 1.2;
+  font-size: 12px;
+}
+.output-panel-header .btn-group { margin: 0; }
+.output-panel-header #formatGroup { padding-top: 1px; }
+.output-panel-header #copyButton { padding-top: 1px; }
+
+/* Make Clear button same size as Copy button */
+#clearButton {
+  padding: 3px 10px;
+  line-height: 1.2;
+  font-size: 12px;
+}
+
+/* Tweak Prettify colors for dark background inside the output panel */
+.output-panel .pln { color: #d4d4d4; }
+.output-panel .kwd { color: #c586c0; }
+.output-panel .str { color: #ce9178; }
+.output-panel .com { color: #6a9955; }
+.output-panel .typ { color: #4ec9b0; }
+.output-panel .lit { color: #b5cea8; }
+.output-panel .pun, .output-panel .opn, .output-panel .clo { color: #cccccc; }
+
 .footer>div {
   text-align: center;
   margin-top:20px;

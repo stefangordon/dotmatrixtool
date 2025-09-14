@@ -1,14 +1,23 @@
+"use strict";
 var matrix;
 var $table;
 var rowMajor = false;
 var msbendian = false;
+var selectedFormat = 'c';
 
 $(function() {
-  	matrix = createArray(16,16);
-  	updateTable();
-	initOptions();
-
-	$('#_output').hide();
+  var savedWidth = parseInt(localStorage.getItem('dm_width'));
+  if (isNaN(savedWidth) || savedWidth <= 0) savedWidth = 16;
+  var savedHeight = parseInt(localStorage.getItem('dm_height'));
+  if (isNaN(savedHeight) || savedHeight <= 0) savedHeight = 16;
+  rowMajor = localStorage.getItem('dm_rowMajor') === '1';
+  msbendian = localStorage.getItem('dm_msbendian') === '1';
+  var savedFormat = localStorage.getItem('dm_format');
+  if (savedFormat === 'c' || savedFormat === 'bin' || savedFormat === 'ascii') selectedFormat = savedFormat;
+  matrix = createArray(savedHeight, savedWidth);
+  updateTable();
+  initOptions();
+  updateCode();
 });
 
 function updateTable() {
@@ -19,44 +28,82 @@ function updateTable() {
 	$('#_grid').append(populateTable(null, height, width, ""));
 
 	// events
-	$table.on("mousedown", "td", toggle);
-    $table.on("mouseenter", "td", toggle);
+	$table.on("mousedown", "td", function(e){ toggle.call(this, e); updateCode(); });
+    $table.on("mouseenter", "td", function(e){ toggle.call(this, e); if (e.buttons) updateCode(); });
     $table.on("dragstart", function() { return false; });
 }
 
 function initOptions() {
-	$('#clearButton').click(function() { matrix = createArray(matrix.length,matrix[0].length); updateTable(); $('#_output').hide(); });
-	$('#generateButton').click(updateCode);
+	$('#clearButton').click(function() { matrix = createArray(matrix.length,matrix[0].length); updateTable(); $('#_output').hide(); $('#outputPanel').hide(); });
+
+	$('#copyButton').click(function() {
+		var text = $('#_output').text();
+		if (!text) return;
+		if (navigator.clipboard && window.isSecureContext) {
+			navigator.clipboard.writeText(text).catch(function(){});
+			return;
+		}
+		var ta = document.createElement('textarea');
+		ta.value = text;
+		ta.style.position = 'fixed';
+		ta.style.left = '-9999px';
+		document.body.appendChild(ta);
+		ta.focus();
+		ta.select();
+		try { document.execCommand('copy'); } catch (e) {}
+		document.body.removeChild(ta);
+	});
 
 	 $('#widthDropDiv li a').click(function () {
 	 	var width = parseInt($(this).html());
 	 	var height = matrix.length;
-        matrix = createArray(height, width);
-        updateTable();
-        updateSummary();
-     });
+       matrix = createArray(height, width);
+       updateTable();
+       updateSummary();
+       updateCode();
+       try { localStorage.setItem('dm_width', width); } catch (e) {}
+    });
 
-     $('#heightDropDiv li a').click(function () {
+    $('#heightDropDiv li a').click(function () {
 	 	var width = matrix[0].length;
 	 	var height = parseInt($(this).html());
-        matrix = createArray(height, width);
-        updateTable();
-        updateSummary();
-     });
+       matrix = createArray(height, width);
+       updateTable();
+       updateSummary();
+       updateCode();
+       try { localStorage.setItem('dm_height', height); } catch (e) {}
+    });
 
-     $('#byteDropDiv li a').click(function () {
+    $('#byteDropDiv li a').click(function () {
 	 	var selection = $(this).html();
-        rowMajor = selection.startsWith("Row");  
-        updateSummary();      	
-     });
+       rowMajor = selection.startsWith("Row");  
+       updateSummary();      
+       updateCode();
+       try { localStorage.setItem('dm_rowMajor', rowMajor ? '1' : '0'); } catch (e) {}
+    });
 
-     $('#endianDropDiv li a').click(function () {
+    $('#endianDropDiv li a').click(function () {
 	 	var selection = $(this).html();
-        msbendian = selection.startsWith("Big");  
-        updateSummary();      	
-     });
+       msbendian = selection.startsWith("Big");  
+       updateSummary();      
+       updateCode();
+       try { localStorage.setItem('dm_msbendian', msbendian ? '1' : '0'); } catch (e) {}
+    });
 
-     updateSummary();
+	// Output format buttons
+	$('.format-btn').click(function () {
+		selectedFormat = $(this).data('format');
+		$('.format-btn').removeClass('active');
+		$(this).addClass('active');
+		try { localStorage.setItem('dm_format', selectedFormat); } catch (e) {}
+		updateCode();
+	});
+
+	// Initialize active state from saved format
+	$('.format-btn').removeClass('active');
+	$('.format-btn[data-format="' + selectedFormat + '"]').addClass('active');
+
+    updateSummary();
 }
 
 function updateSummary() {
@@ -75,14 +122,28 @@ function updateSummary() {
 
 function updateCode() {
 	$('#_output').show();
-	var bytes = generateByteArray();
-	var output = "const uint_8 data[] =\n{\n" + bytes + "\n};"
+	$('#outputPanel').show();
+	var output;
+	if (selectedFormat === 'ascii') {
+		output = generateAsciiArt();
+		$('#_output').removeClass('lang-c');
+	}
+	else {
+		var bytes = buildBytes();
+		if (selectedFormat === 'bin') {
+			output = "static const uint8_t data[] =\n{\n" + formatBinary(bytes) + "\n};";
+		}
+		else {
+			output = "static const uint8_t data[] =\n{\n" + formatHex(bytes) + "\n};";
+		}
+		$('#_output').addClass('lang-c');
+	}
 	$('#_output').html(output);
 	$('#_output').removeClass('prettyprinted');
 	prettyPrint();
 }
 
-function generateByteArray() {
+function buildBytes() {
 	var width = matrix[0].length;
 	var height = matrix.length;
 	var buffer = new Array(width * height);
@@ -96,7 +157,9 @@ function generateByteArray() {
 			if (!temp) temp = 0;
 			// Row Major or Column Major?
 			if (!rowMajor) {
-				buffer[x * height + y] = temp;	
+				var page = Math.floor(y / 8);
+				var bit = y % 8;
+				buffer[(page * width + x) * 8 + bit] = temp;
 			}
 			else {
 				buffer[y * width + x] = temp;
@@ -122,15 +185,50 @@ function generateByteArray() {
         bytes[i / 8] = newByte;
 	}
 
-	var formatted = bytes.map(function (x) {
-	    x = x + 0xFFFFFFFF + 1;  // twos complement
-	    x = x.toString(16); // to hex
-	    x = ("0"+x).substr(-2); // zero-pad to 8-digits
-	    x = "0x" + x;
-	    return x;
-	}).join(', ');
 
-	return formatted;
+	return bytes;
+}
+
+function formatHex(bytes) {
+	var hexStrings = bytes.map(function (x) {
+	    var hx = x.toString(16);
+	    if (hx.length < 2) hx = '0' + hx;
+	    return '0x' + hx;
+	});
+	var perLine = 12;
+	var lines = [];
+	for (var k = 0; k < hexStrings.length; k += perLine) {
+		lines.push('    ' + hexStrings.slice(k, k + perLine).join(', '));
+	}
+	return lines.join(',\n');
+}
+
+function formatBinary(bytes) {
+	var binStrings = bytes.map(function (x) {
+		var b = x.toString(2);
+		if (b.length < 8) b = Array(9 - b.length).join('0') + b;
+		return '0b' + b;
+	});
+	var perLine = 12;
+	var lines = [];
+	for (var k = 0; k < binStrings.length; k += perLine) {
+		lines.push('    ' + binStrings.slice(k, k + perLine).join(', '));
+	}
+	return lines.join(',\n');
+}
+
+function generateAsciiArt() {
+	var width = matrix[0].length;
+	var height = matrix.length;
+	var lines = [];
+	for (var y = 0; y < height; y++) {
+		var row = '';
+		for (var x = 0; x < width; x++) {
+			row += matrix[y][x] ? '#' : '.';
+		}
+		lines.push(row);
+	}
+	return lines.join('\n');
 }
 
 function toggle(e) {
