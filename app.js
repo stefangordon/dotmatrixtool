@@ -34,7 +34,7 @@ function updateTable() {
 }
 
 function initOptions() {
-	$('#clearButton').click(function() { matrix = createArray(matrix.length,matrix[0].length); updateTable(); $('#_output').hide(); $('#outputPanel').hide(); });
+	$('#clearButton').click(function() { matrix = createArray(matrix.length,matrix[0].length); updateTable(); updateSummary(); updateCode(); });
 
 	$('#copyButton').click(function() {
 		var text = $('#_output').text();
@@ -126,21 +126,34 @@ function updateCode() {
 	var output;
 	if (selectedFormat === 'ascii') {
 		output = generateAsciiArt();
-		$('#_output').removeClass('lang-c');
+		$('#_output').removeClass('lang-c prettyprinted');
+		$('#_output').text(output);
+		return;
 	}
-	else {
-		var bytes = buildBytes();
-		if (selectedFormat === 'bin') {
-			output = "static const uint8_t data[] =\n{\n" + formatBinary(bytes) + "\n};";
-		}
-		else {
-			output = "static const uint8_t data[] =\n{\n" + formatHex(bytes) + "\n};";
-		}
-		$('#_output').addClass('lang-c');
+
+	var bytes = buildBytes();
+	if (selectedFormat === 'bin') {
+		output = "static const uint8_t data[] =\n{\n" + formatBinary(bytes) + "\n};";
+	} else {
+		output = "static const uint8_t data[] =\n{\n" + formatHex(bytes) + "\n};";
 	}
-	$('#_output').html(output);
-	$('#_output').removeClass('prettyprinted');
-	prettyPrint();
+	$('#_output').addClass('lang-c').removeClass('prettyprinted');
+
+	// Prefer generating highlighted HTML directly for reliable live updates
+	if (window.PR && typeof window.PR.prettyPrintOne === 'function') {
+		$('#_output').html(window.PR.prettyPrintOne(output, 'c'));
+	} else if (typeof window.prettyPrintOne === 'function') {
+		$('#_output').html(window.prettyPrintOne(output, 'c'));
+	} else {
+		// Fallback to plain text and a best-effort prettyPrint scan
+		$('#_output').text(output);
+		var el = document.getElementById('_output');
+		if (window.PR && typeof window.PR.prettyPrint === 'function') {
+			window.PR.prettyPrint(null, el);
+		} else if (typeof window.prettyPrint === 'function') {
+			window.prettyPrint();
+		}
+	}
 }
 
 function buildBytes() {
