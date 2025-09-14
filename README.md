@@ -5,9 +5,6 @@ Generate character or image byte arrays for monochrome dot‑matrix OLED/LCD dis
 ### Live demo
 [dotmatrixtool.com](http://dotmatrixtool.com)
 
-### Background
-See the blog post: [Build icons and characters for monochrome LCD matrix displays](http://www.stefangordon.com/build-icons-and-characters-for-monochrome-lcd-matrix-displays/)
-
 ## Features
 - **Interactive pixel editor**: Left‑click to draw, right‑click (or Ctrl+Left) to erase; click‑and‑drag supported.
 - **Adjustable canvas**: Width options `4, 6, 8, 16, 24, 32`; Height options `8, 16, 24, 32`.
